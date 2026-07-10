@@ -1,14 +1,18 @@
+
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using TmsApi.Data;
+using TmsApi.Entities;
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🛑 ይህንን መስመር አጥፋው (አያስፈልግም፣ launchSettings.json ይቆጣጠረዋል)
+
 // builder.Environment.EnvironmentName = "Production"; 
 
 // DI Validation
@@ -21,6 +25,12 @@ builder.Host.UseDefaultServiceProvider(options =>
 // Database & Identity Config
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseInMemoryDatabase("AppDb"));
+    
+   
+builder.Services.AddDbContext<TmsDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("TmsDatabase"))
+           .LogTo(Console.WriteLine, LogLevel.Information)
+           .EnableSensitiveDataLogging());
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
@@ -30,14 +40,11 @@ builder.Services.AddIdentityApiEndpoints<IdentityUser>()
 
 builder.Services.AddControllers();
 
-// =============================================================
-// ✅ ማስተካከያ፦ በ Development ጊዜ የ HTML ገጹን የሚቀይር የሰርቪስ ቅንብር
-// =============================================================
+
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
     {
-        // ይህ ባዶ ቅጥያ (Extension) .NET የ HTML ገጹን እንዳያሳይ ያስገድደዋል
         context.ProblemDetails.Extensions["tms_error"] = "ProblemDetails active";
     };
 });
@@ -57,11 +64,7 @@ builder.Services
 
 var app = builder.Build();
 
-// =============================================================
-// MIDDLEWARE PIPELINE (የሚድልዌር ቅደም ተከተል)
-// =============================================================
 
-// 🛑 ማስተካከያ፦ በ Dev ሞድም ቢሆን Exceptionን በ JSON እንዲተረጉም እንነግረዋለን
 app.UseExceptionHandler(new ExceptionHandlerOptions
 {
     AllowStatusCode404Response = true
@@ -74,7 +77,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// OpenAPI & Scalar ድጋፍ 
+// OpenAPI & Scalar 
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -83,12 +86,48 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 
-// የቆየው የቴስት ዳታ አጠቃቀም (የእኛ ሎግ ተርሚናል ላይ ያየነው)
 using (var scope = app.Services.CreateScope())
 {
-    var enrollmentService = scope.ServiceProvider.GetRequiredService<IEnrollmentService>();
-    enrollmentService.EnrollAsync("S-001", "CS-101").GetAwaiter().GetResult();
-    enrollmentService.EnrollAsync("S-001", "CS-101").GetAwaiter().GetResult();
+    var context = scope.ServiceProvider.GetRequiredService<TmsDbContext>();
+
+    context.Database.Migrate();
+
+    if (!context.Students.Any())
+    {
+        var students = new List<Student>
+        {
+            new() { RegistrationNumber = "TMS-2026-0001", Name = "Alice Smith", GPA = 3.8m, IsActive = true },
+            new() { RegistrationNumber = "TMS-2026-0002", Name = "Bob Jones", GPA = 2.9m, IsActive = true },
+            new() { RegistrationNumber = "TMS-2026-0003", Name = "Charlie Brown", GPA = 3.4m, IsActive = false },
+            new() { RegistrationNumber = "TMS-2026-0004", Name = "Diana Prince", GPA = 3.9m, IsActive = true },
+            new() { RegistrationNumber = "TMS-2026-0005", Name = "Evan Wright", GPA = 2.5m, IsActive = true }
+        };
+
+        context.Students.AddRange(students);
+
+        var courses = new List<Course>
+        {
+            new() { Code = "CS-101", Title = "Introduction to Computer Science", Capacity = 30 },
+            new() { Code = "CS-201", Title = "Data Structures and Algorithms", Capacity = 25 },
+            new() { Code = "MAT-101", Title = "Calculus I", Capacity = 40 }
+        };
+
+        context.Courses.AddRange(courses);
+
+        context.SaveChanges();
+
+        var enrollments = new List<Enrollment>
+        {
+            new() { StudentId = students[0].Id, CourseId = courses[0].Id, Grade = 4.0m },
+            new() { StudentId = students[0].Id, CourseId = courses[1].Id, Grade = 3.6m },
+            new() { StudentId = students[1].Id, CourseId = courses[0].Id, Grade = 2.8m },
+            new() { StudentId = students[3].Id, CourseId = courses[1].Id, Grade = 3.9m }
+        };
+
+        context.Enrollments.AddRange(enrollments);
+
+        context.SaveChanges();
+    }
 }
 
 app.MapGet("/api/assessments/results", () => Results.Ok(new
@@ -98,7 +137,6 @@ app.MapGet("/api/assessments/results", () => Results.Ok(new
     letterGrade = "A"
 })).RequireAuthorization();
 
-// Exercise 6: ሆን ብሎ ስህተት የሚፈጥር የቴስት ኤንድፖይንት
 app.MapGet("/api/error", () =>
 {
     throw new TmsDatabaseException("Simulated database failure for ProblemDetails testing");
