@@ -15,4 +15,6 @@ public class Enrollment
 
     public DateTime EnrollmentDate { get; set; }
     public decimal Grade { get; set; }
+
+    public bool IsArchived { get; set; } = false;
 }
