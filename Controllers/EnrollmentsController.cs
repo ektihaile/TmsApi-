@@ -1,14 +1,18 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
+using TmsApi.Data;
 
 namespace TmsApi.Controllers;
 
 [ApiController]
 [Route("api/enrollments")]
-// 👈 እዚህ ጋር OpenEnrollmentService የነበረው ወደ ያንተ ትክክለኛ ሰርቪስ ተቀይሯል
-public class EnrollmentsController(IEnrollmentService enrollmentService) : ControllerBase
+public class EnrollmentsController(
+    IEnrollmentService enrollmentService,
+    TmsDbContext context) : ControllerBase
 {
-    // 1. GET /api/enrollments (ሁሉንም መዝገቦች ከሰርቪሱ ያመጣል)
+    private readonly TmsDbContext _context = context;
+
+    // GET /api/enrollments
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -16,7 +20,7 @@ public class EnrollmentsController(IEnrollmentService enrollmentService) : Contr
         return Ok(enrollments);
     }
 
-    // 2. GET /api/enrollments/{id}
+    // GET /api/enrollments/{id}
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(string id)
     {
@@ -24,12 +28,14 @@ public class EnrollmentsController(IEnrollmentService enrollmentService) : Contr
         return record is not null ? Ok(record) : NotFound();
     }
 
-    // 3. POST /api/enrollments
+    // POST /api/enrollments
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateEnrollmentRequest request)
     {
-        var record = await enrollmentService.EnrollAsync(request.StudentId, request.CourseCode);
-        
+        var record = await enrollmentService.EnrollAsync(
+            request.StudentId,
+            request.CourseCode);
+
         if (record is null)
         {
             return BadRequest("Enrollment failed.");
@@ -38,12 +44,54 @@ public class EnrollmentsController(IEnrollmentService enrollmentService) : Contr
         return CreatedAtAction(nameof(GetById), new { id = record.Id }, record);
     }
 
-    // 4. DELETE /api/enrollments/{id}
+    // DELETE /api/enrollments/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
         var deleted = await enrollmentService.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
+    }
+
+    // Exercise 7 - Part A (N+1)
+    [HttpGet("nplus1")]
+    public async Task<IActionResult> NPlusOne(CancellationToken cancellationToken)
+    {
+        var students = await _context.Students
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var result = new List<object>();
+
+        foreach (var s in students)
+        {
+            var count = await _context.Enrollments
+                .AsNoTracking()
+                .CountAsync(e => e.StudentId == s.Id, cancellationToken);
+
+            result.Add(new
+            {
+                s.Name,
+                EnrollmentCount = count
+            });
+        }
+
+        return Ok(result);
+    }
+
+    // Exercise 7 - Part B (Optimized)
+    [HttpGet("optimized")]
+    public async Task<IActionResult> Optimized(CancellationToken cancellationToken)
+    {
+        var report = await _context.Students
+            .AsNoTracking()
+            .Select(s => new
+            {
+                s.Name,
+                EnrollmentCount = s.Enrollments.Count
+            })
+            .ToListAsync(cancellationToken);
+
+        return Ok(report);
     }
 }
 
