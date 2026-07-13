@@ -11,6 +11,9 @@ public class Student
 
     public uint Version { get; set; }
 
+    // Exercise 9 - Soft delete
+    public bool IsDeleted { get; set; } = false;
+
     // Navigation property for many-to-many relationship
     public ICollection<Enrollment> Enrollments { get; set; } = new List<Enrollment>();
 }
