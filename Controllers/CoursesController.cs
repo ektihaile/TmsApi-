@@ -1,35 +1,36 @@
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TmsApi.Data;
+using TmsApi.Entities;
+using TmsApi.Services;
 
 namespace TmsApi.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class CoursesController : ControllerBase
+[Route("api/courses")]
+public class CoursesController(ICourseService courseService) : ControllerBase
 {
-    private readonly TmsDbContext _context;
-
-    public CoursesController(TmsDbContext context)
+    // TODO 3: GET /api/courses/{id}
+    [HttpGet("{id:int}", Name = nameof(GetCourseById))]
+    public async Task<ActionResult<Course>> GetCourseById(int id, CancellationToken ct)
     {
-        _context = context;
+        var course = await courseService.GetByIdAsync(id, ct);
+        
+        if (course == null)
+        {
+            return NotFound(); // ኮርሱ ካልተገኘ 404 Not Found ይመልሳል
+        }
+        
+        return Ok(course); // ከተገኘ 200 OK ከመረጃው ጋር ይመልሳል
     }
 
-    [HttpGet("top")]
-public async Task<IActionResult> GetTopCourses(
-    CancellationToken cancellationToken)
-{
-    var topcourses = await _context.Enrollments
-        .GroupBy(e => e.Course.Title)
-        .Select(g => new
-        {
-            CourseTitle = g.Key,
-            EnrollmentCount = g.Count()
-        })
-        .OrderByDescending(x => x.EnrollmentCount)
-        .Take(5)
-        .ToListAsync(cancellationToken);
-
-    return Ok(topcourses);
-}
+    // TODO 4: POST /api/courses
+    [HttpPost]
+    public async Task<ActionResult<Course>> CreateCourse(Course course, CancellationToken ct)
+    {
+        var result = await courseService.CreateAsync(course, ct);
+        
+        // ስኬታማ ሲሆን 201 Created ይመልሳል፤ እንዲሁም Location ራስጌ ላይ አዲሱን የኮርስ መፈለጊያ አድራሻ ያዘጋጃል
+        return CreatedAtAction(nameof(GetCourseById), new { id = result.Id }, result);
+    }
 }
