@@ -1,14 +1,9 @@
-using System.Threading;
-using System.Threading.Tasks;
-using TmsApi.Entities;
+using TmsApi.Dtos;
 
 namespace TmsApi.Services;
 
 public interface ICourseService
 {
-    // የኮርሱን መረጃ በ ID ለመፈለግ
-    Task<Course?> GetByIdAsync(int id, CancellationToken ct);
-    
-    // አዲስ ኮርስ ለመፍጠር
-    Task<Course> CreateAsync(Course course, CancellationToken ct);
+    Task<CourseResponseDto?> GetByIdAsync(int id, CancellationToken ct);
+    Task<CourseResponseDto> CreateAsync(CreateCourseRequest request, CancellationToken ct);
 }
