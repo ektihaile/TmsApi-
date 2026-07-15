@@ -17,6 +17,8 @@ builder.Services.AddDbContext<TmsDbContext>(options =>
 // 3. የእኛን CourseService ምዝገባ (በእያንዳንዱ ጥያቄ አዲስ እንዲሆን Scoped ተደርጓል)
 builder.Services.AddScoped<ICourseService, CourseService>();
 
+builder.Services.AddScoped<IEnrollmentService, EnrollmentService>();
+
 var app = builder.Build();
 
 // 4. የስህተትና የስታተስ ኮድ መቆጣጠሪያዎች (Middlewares)

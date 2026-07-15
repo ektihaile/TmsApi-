@@ -33,7 +33,9 @@ public class CourseService(TmsDbContext context, ILogger<CourseService> logger) 
 
         logger.LogInformation("Created course {CourseId} ({Code})", course.Id, course.Code);
 
-        // መረጃው መፈጠሩን ካረጋገጥን በኋላ መልሰን በ GetByIdAsync በኩል አዲሱን DTO እንጠይቃለን
         return (await GetByIdAsync(course.Id, ct))!;
     }
+
+    public async Task<bool> CodeExistsAsync(string code, CancellationToken ct) =>
+        await context.Courses.AsNoTracking().AnyAsync(c => c.Code == code, ct);
 }
