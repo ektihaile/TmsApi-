@@ -1,35 +1,36 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TmsApi.Data;
+using TmsApi.Dtos;
+using TmsApi.Services;
 
 namespace TmsApi.Controllers;
 
 [ApiController]
-[Route("api/[controller]")]
-public class CoursesController : ControllerBase
+[Route("api/courses")]
+public class CoursesController(ICourseService courseService) : ControllerBase
 {
-    private readonly TmsDbContext _context;
-
-    public CoursesController(TmsDbContext context)
+    [HttpGet("{id:int}", Name = nameof(GetCourseById))]
+    public async Task<ActionResult<CourseResponseDto>> GetCourseById(int id, CancellationToken ct)
     {
-        _context = context;
+        var course = await courseService.GetByIdAsync(id, ct);
+        return course is not null ? Ok(course) : NotFound();
     }
 
-    [HttpGet("top")]
-public async Task<IActionResult> GetTopCourses(
-    CancellationToken cancellationToken)
-{
-    var topcourses = await _context.Enrollments
-        .GroupBy(e => e.Course.Title)
-        .Select(g => new
+    [HttpPost]
+    public async Task<ActionResult<CourseResponseDto>> CreateCourse(CreateCourseRequest request, CancellationToken ct)
+    {
+        // TODO 1: የኮርስ ኮድ አስቀድሞ መኖሩን ማረጋገጥ (Pre-check)
+        if (await courseService.CodeExistsAsync(request.Code, ct))
         {
-            CourseTitle = g.Key,
-            EnrollmentCount = g.Count()
-        })
-        .OrderByDescending(x => x.EnrollmentCount)
-        .Take(5)
-        .ToListAsync(cancellationToken);
+            return Conflict(new ProblemDetails
+            {
+                Title = "Course code already exists",
+                Detail = $"A course with code '{request.Code}' is already registered.",
+                Status = StatusCodes.Status409Conflict,
+                Instance = HttpContext.Request.Path
+            });
+        }
 
-    return Ok(topcourses);
-}
+        var result = await courseService.CreateAsync(request, ct);
+        return CreatedAtAction(nameof(GetCourseById), new { id = result.Id }, result);
+    }
 }
