@@ -1,9 +1,21 @@
-using TmsApi.Dtos;
+// using TmsApi.Dtos;
 
-namespace TmsApi.Services;
+// namespace TmsApi.Services;
 
-public interface IEnrollmentService
-{
-    Task<EnrollmentResponseDto?> GetByIdAsync(int courseId, int id, CancellationToken ct);
-    Task<EnrollmentResponseDto> CreateAsync(int courseId, EnrollStudentRequest request, CancellationToken ct);
-}
+// public interface IEnrollmentService
+// {
+//     Task<EnrollmentResponseDto?> GetByIdAsync(
+//         int courseId,
+//         int id,
+//         CancellationToken ct);
+
+//     Task<EnrollmentResponseDto> CreateAsync(
+//         int courseId,
+//         EnrollStudentRequest request,
+//         CancellationToken ct);
+
+  
+//     Task<IReadOnlyList<EnrollmentResponseDto>> GetByCourseAsync(
+//         int courseId,
+//         CancellationToken ct = default);
+// }

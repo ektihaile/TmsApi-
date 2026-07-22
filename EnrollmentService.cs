@@ -3,10 +3,25 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TmsApi.Dtos;
 
 //---------------- Interface ----------------
 public interface IEnrollmentService
 {
+    Task<EnrollmentResponseDto?> GetByIdAsync(
+        int courseId,
+        int id,
+        CancellationToken ct);
+
+    Task<EnrollmentResponseDto> CreateAsync(
+        int courseId,
+        EnrollStudentRequest request,
+        CancellationToken ct);
+
+    Task<IReadOnlyList<EnrollmentResponseDto>> GetByCourseAsync(
+        int courseId,
+        CancellationToken ct = default);
+        
     Task<EnrollmentRecord> EnrollAsync(string studentId, string courseCode);
     Task<EnrollmentRecord?> GetByIdAsync(string id);
     Task<IReadOnlyList<EnrollmentRecord>> GetAllAsync();
@@ -42,7 +57,8 @@ public class EnrollmentService : IEnrollmentService
 
         var id = Guid.NewGuid().ToString("N")[..8];
 
-        var record = new EnrollmentRecord(id, studentId, courseCode, DateTime.UtcNow);
+        // 🔧 እዚች ጋር 4ኛውን አርጉመንት (DateTime) አስወግደነዋል!
+        var record = new EnrollmentRecord(id, studentId, courseCode);
         _store[id] = record;
 
         _logger.LogInformation(
@@ -87,11 +103,25 @@ public class EnrollmentService : IEnrollmentService
 
         return Task.FromResult(removed);
     }
+
+    public Task<EnrollmentResponseDto?> GetByIdAsync(int courseId, int id, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<EnrollmentResponseDto> CreateAsync(int courseId, EnrollStudentRequest request, CancellationToken ct)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Task<IReadOnlyList<EnrollmentResponseDto>> GetByCourseAsync(int courseId, CancellationToken ct = default)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 //---------------- Data Model ----------------
 public record EnrollmentRecord(
     string Id,
     string StudentId,
-    string CourseCode,
-    DateTime EnrolledAt);
+    string CourseCode);

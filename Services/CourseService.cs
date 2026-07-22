@@ -44,11 +44,15 @@ public class CourseService(TmsDbContext context, ILogger<CourseService> logger) 
             .AnyAsync(c => c.Code == code, ct);
 
 
-    // እዚህ ውስጥ አስገባ
     public async Task<PagedResponse<CourseResponseDto>> GetCoursesAsync(
         PagedRequest request,
         CancellationToken ct)
     {
+        const int maxPageSize = 50;
+        var pageSize = request.PageSize > 0 ? Math.Min(request.PageSize, maxPageSize) : 10;
+        var page = request.Page < 1 ? 1 : request.Page;
+
+        // 2. Filter / Search
         IQueryable<Course> query = context.Courses.AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(request.Search))
@@ -58,8 +62,10 @@ public class CourseService(TmsDbContext context, ILogger<CourseService> logger) 
                 EF.Functions.ILike(c.Code, $"%{request.Search}%"));
         }
 
+    
         var totalCount = await query.CountAsync(ct);
 
+        // 4. Sorting
         IQueryable<Course> sortedQuery = request.OrderBy switch
         {
             "Code" => request.Descending
@@ -75,10 +81,9 @@ public class CourseService(TmsDbContext context, ILogger<CourseService> logger) 
                 : query.OrderBy(c => c.Title)
         };
 
-
         var items = await sortedQuery
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => new CourseResponseDto(
                 c.Id,
                 c.Code,
@@ -87,14 +92,12 @@ public class CourseService(TmsDbContext context, ILogger<CourseService> logger) 
                 c.Enrollments.Count))
             .ToListAsync(ct);
 
-
         return new PagedResponse<CourseResponseDto>
         {
             Items = items,
             TotalCount = totalCount,
-            Page = request.Page,
-            PageSize = request.PageSize
+            Page = page,
+            PageSize = pageSize
         };
     }
 }
-
