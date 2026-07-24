@@ -8,11 +8,16 @@ namespace TmsApi.Controllers;
 [ApiController]
 [Route("api/courses/{courseId:int}/enrollments")]
 [Tags("Enrollments")]
+[Produces("application/json")]
+[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
 public class EnrollmentsController(
     IEnrollmentService enrollmentService,
     ICourseService courseService) : ControllerBase
 {
     [HttpGet(Name = "ListCourseEnrollments")]
+    [EndpointSummary("List enrolments for a course")]
+    [ProducesResponseType(typeof(IReadOnlyList<EnrollmentResponseDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEnrollments(
         int courseId,
         CancellationToken ct)
@@ -25,8 +30,10 @@ public class EnrollmentsController(
         return Ok(result);
     }
 
-    // 2. [HttpGet("{id:int}")] ተጨምሯል
     [HttpGet("{id:int}", Name = nameof(GetEnrollment))]
+    [EndpointSummary("Get one enrolment for a course")]
+    [ProducesResponseType(typeof(EnrollmentResponseDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetEnrollment(
         int courseId,
         int id,
@@ -40,6 +47,12 @@ public class EnrollmentsController(
     }
 
     [HttpPost]
+    [EndpointSummary("Enrol a student in a course")]
+    [EndpointDescription("Returns 404 if the course does not exist, 409 if the course has reached MaxCapacity.")]
+    [ProducesResponseType(typeof(EnrollmentResponseDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status409Conflict)]
     public async Task<IActionResult> CreateEnrollment(
         int courseId,
         [FromBody] EnrollStudentRequest request,

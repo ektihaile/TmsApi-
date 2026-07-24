@@ -14,11 +14,10 @@ public class TestController(TmsDbContext context) : ControllerBase
     {
         var query = context.Students.Where(s => s.GPA >= 3.0m);
         var orderedQuery = query.OrderBy(s => s.Name);
-        var results = orderedQuery.ToList(); // እዚህ ላይ ነው ዳታቤዝ የሚጠየቀው
+        var results = orderedQuery.ToList(); 
         return Ok(results);
     }
 
-    // Step 5 - ጥያቄ 1፡ ንቁ የሆኑ ተማሪዎች ብዛት
     [HttpGet("registrar/active-count")]
     public async Task<IActionResult> GetActiveCount()
     {
@@ -39,7 +38,7 @@ public async Task<IActionResult> AverageGpa()
 
     return Ok(list);
 }
-    // ጥያቄ 2፣ 3 እና 4 በላብራቶሪው በተሰጠህ የC# ስታይል መሰረት እዚህ ቀጥለው ይገባሉ...
+    
 }
 
 

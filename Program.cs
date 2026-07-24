@@ -28,7 +28,7 @@ app.UseStatusCodePages();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
-    app.MapScalarApiReference(); // Scalar API ዶክመንቴሽን ገፅ
+    app.MapScalarApiReference(); 
 }
 
 app.MapControllers();

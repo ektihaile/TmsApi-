@@ -15,8 +15,6 @@ public class EnrollmentWorker
 
         var service = scope.ServiceProvider
             .GetRequiredService<IEnrollmentService>();
-
-        // use the service safely inside scope
         Console.WriteLine("Processing batch...");
     }
 }
