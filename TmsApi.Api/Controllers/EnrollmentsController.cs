@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using TmsApi.Application.Dtos;
 using TmsApi.Application.Interfaces;
 
-namespace TmsApi.Controllers;
+namespace TmsApi.Api.Controllers;
 
 [ApiController]
 [Route("api/courses/{courseId:int}/enrollments")]

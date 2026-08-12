@@ -1,9 +1,8 @@
 // using Microsoft.AspNetCore.Mvc;
 // using Microsoft.EntityFrameworkCore;
 // using TmsApi.Infrastructure.Persistence;
-// using TmsApi.Entities;
 
-// namespace TmsApi.Controllers;
+// namespace TmsApi.Api.Controllers;
 
 // [ApiController]
 // [Route("api/[controller]")]
