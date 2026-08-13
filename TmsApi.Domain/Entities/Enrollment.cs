@@ -15,4 +15,5 @@ public class Enrollment
     public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;
     public int Year { get; set; }
     public bool IsArchived { get; set; }
+    public DateTime EnrolledAt { get; set; }
 }
